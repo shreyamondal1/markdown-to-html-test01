@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Markdown to HTML Converter</title>
+    
+    <!-- Highlight.js CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 2rem 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .container {
+            max-width: 900px;
+        }
+        
+        .card {
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            border: none;
+        }
+        
+        .card-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 15px 15px 0 0 !important;
+            padding: 1.5rem;
+        }
+        
+        .card-header h1 {
+            margin: 0;
+            font-size: 1.8rem;
+            font-weight: 600;
+        }
+        
+        .card-body {
+            padding: 2rem;
+            background-color: #ffffff;
+        }
+        
+        #markdown-output {
+            background-color: #f8f9fa;
+            padding: 2rem;
+            border-radius: 10px;
+            border: 1px solid #e9ecef;
+            min-height: 200px;
+        }
+        
+        #markdown-output h1 {
+            color: #2c3e50;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 0.5rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        #markdown-output h2 {
+            color: #34495e;
+            margin-top: 2rem;
+            margin-bottom: 1rem;
+            border-bottom: 2px solid #e9ecef;
+            padding-bottom: 0.3rem;
+        }
+        
+        #markdown-output ul {
+            list-style-type: none;
+            padding-left: 0;
+        }
+        
+        #markdown-output li {
+            padding: 0.5rem 0;
+            padding-left: 1.5rem;
+            position: relative;
+        }
+        
+        #markdown-output li:before {
+            content: "▸";
+            position: absolute;
+            left: 0;
+            color: #667eea;
+            font-weight: bold;
+        }
+        
+        #markdown-output pre {
+            background-color: #282c34;
+            border-radius: 8px;
+            padding: 1rem;
+            margin: 1rem 0;
+            overflow-x: auto;
+        }
+        
+        #markdown-output code {
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 0.9rem;
+        }
+        
+        #markdown-output p {
+            line-height: 1.8;
+            color: #555;
+        }
+        
+        #markdown-output strong {
+            color: #667eea;
+            font-weight: 600;
+        }
+        
+        .status-badge {
+            display: inline-block;
+            padding: 0.5rem 1rem;
+            background-color: #28a745;
+            color: white;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            margin-top: 1rem;
+        }
+        
+        .footer {
+            text-align: center;
+            color: white;
+            margin-top: 2rem;
+            font-size: 0.9rem;
+        }
+        
+        .loader {
+            display: none;
+            text-align: center;
+            padding: 2rem;
+        }
+        
+        .spinner-border {
+            color: #667eea;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <div class="card-header">
+                <h1>📝 Markdown to HTML Converter</h1>
+                <p class="mb-0" style="opacity: 0.9;">Converting input.md with marked.js and highlight.js</p>
+            </div>
+            <div class="card-body">
+                <div class="loader" id="loader">
+                    <div class="spinner-border" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-2">Processing markdown...</p>
+                </div>
+                
+                <div id="markdown-output"></div>
+                
+                <div class="status-badge" id="status">
+                    ✓ Markdown successfully rendered
+                </div>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p>Powered by marked.js & highlight.js | MIT License</p>
+        </div>
+    </div>
+
+    <!-- Marked.js Library -->
+    <script src="https://cdn.jsdelivr.net/npm/marked@11.1.1/marked.min.js"></script>
+    
+    <!-- Highlight.js Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        // Embedded markdown content from input.md
+        const markdownContent = `# Hello World
+
+This is a **test** markdown document.
+
+## Features
+
+- Item 1
+- Item 2
+- Item 3
+
+## Code Example
+
+\`\`\`javascript
+function hello() {
+  console.log("Hello World");
+}
+\`\`\`
+`;
+
+        /**
+         * Initialize the markdown converter
+         */
+        function initializeConverter() {
+            try {
+                // Show loader
+                const loader = document.getElementById('loader');
+                loader.style.display = 'block';
+                
+                // Configure marked options
+                marked.setOptions({
+                    highlight: function(code, lang) {
+                        // Use highlight.js for syntax highlighting
+                        if (lang && hljs.getLanguage(lang)) {
+                            try {
+                                return hljs.highlight(code, { language: lang }).value;
+                            } catch (err) {
+                                console.error('Highlight error:', err);
+                            }
+                        }
+                        return hljs.highlightAuto(code).value;
+                    },
+                    breaks: true,
+                    gfm: true
+                });
+                
+                // Convert markdown to HTML
+                const htmlContent = marked.parse(markdownContent);
+                
+                // Render the HTML into the output div
+                const outputDiv = document.getElementById('markdown-output');
+                outputDiv.innerHTML = htmlContent;
+                
+                // Apply syntax highlighting to all code blocks
+                document.querySelectorAll('#markdown-output pre code').forEach((block) => {
+                    hljs.highlightElement(block);
+                });
+                
+                // Hide loader
+                loader.style.display = 'none';
+                
+                // Log success
+                console.log('✓ Markdown successfully converted and rendered');
+                console.log('✓ Syntax highlighting applied');
+                
+            } catch (error) {
+                console.error('Error converting markdown:', error);
+                document.getElementById('markdown-output').innerHTML = 
+                    '<div class="alert alert-danger">Error: Failed to convert markdown. ' + error.message + '</div>';
+                document.getElementById('status').textContent = '✗ Error occurred';
+                document.getElementById('status').style.backgroundColor = '#dc3545';
+            }
+        }
+
+        /**
+         * Verify all required libraries are loaded
+         */
+        function verifyLibraries() {
+            const checks = {
+                'marked': typeof marked !== 'undefined',
+                'highlight.js': typeof hljs !== 'undefined'
+            };
+            
+            console.log('Library Check:', checks);
+            
+            if (checks.marked && checks['highlight.js']) {
+                initializeConverter();
+            } else {
+                console.error('Required libraries not loaded');
+                setTimeout(verifyLibraries, 100); // Retry
+            }
+        }
+
+        // Wait for DOM to be fully loaded
+        if (document.readyState
